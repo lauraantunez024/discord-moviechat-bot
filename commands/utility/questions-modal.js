@@ -15,7 +15,6 @@ module.exports = {
     const modal = new ModalBuilder()
       .setCustomId("movieModal")
       .setTitle(`When's the next movie`);
-
     const nameInput = new TextInputBuilder()
       .setCustomId("nameInput")
       .setLabel("What's your name (familiarly)")
@@ -23,7 +22,7 @@ module.exports = {
 
     const dateInput = new TextInputBuilder()
       .setCustomId("dateInput")
-      .setLabel("What day are you free this week?")
+      .setLabel("Days available seperated by commas")
       .setStyle(TextInputStyle.Paragraph);
 
     const nameActionRow = new ActionRowBuilder().addComponents(nameInput);
