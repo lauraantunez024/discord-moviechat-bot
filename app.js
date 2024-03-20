@@ -43,6 +43,14 @@ const submissionCount = sequelize.define("submission_count", {
     }
 });
 
+const movie = sequelize.define("movie_info", {
+  name: {
+    type: Sequelize.TEXT,
+    unique: true
+  },
+  streamingPlatform:  Sequelize.TEXT
+})
+
 
 
 client.commands = new Collection();
@@ -71,7 +79,8 @@ for (const folder of commandFolders) {
 
 client.once(Events.ClientReady, (readyClient) => {
   userAvailability.sync();
-  submissionCount.sync();
+  // submissionCount.sync();
+  movie.sync();
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
 
@@ -86,6 +95,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     console.error(`No command matching ${interaction.commandName} was found.`);
     return;
   }
+
+ 
 
   try {
     await command.execute(interaction);
@@ -110,17 +121,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isModalSubmit()) return;
-  const nameData = interaction.fields.getTextInputValue("nameInput");
-  const dateData = interaction.fields.getTextInputValue("dateInput");
-  const filteredDates = dateData.trim().replace(' ', '');
-  const datesData = filteredDates.split(',');
-  const info = new Map();
-  for(var i=0; i < daysOfWeek.length; i++) {
-    info.set(daysOfWeek[i])
-  }
 
   
   if (interaction.customId === "movieModal") {
+    const nameData = interaction.fields.getTextInputValue("nameInput");
+    const dateData = interaction.fields.getTextInputValue("dateInput");
+    const filteredDates = dateData.trim().replace(' ', '');
+    const datesData = filteredDates.split(',');
+    const info = new Map();
+    for(var i=0; i < daysOfWeek.length; i++) {
+      info.set(daysOfWeek[i])
+    }
+    
 
     try { 
 
@@ -128,11 +140,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
         name: nameData,
         days: datesData,
       });
-      for(var i=0; i < datesData.length; i++) {
-        const dateInfo = submissionCount.create({
-          day_of_week: datesData[i]
-        })
-      }
+      // for(var i=0; i < datesData.length; i++) {
+      //   const dateInfo = submissionCount.create({
+      //     day_of_week: datesData[i]
+      //   })
+      // }
 
         const singleUser = await userAvailability.findOne({ where: { name: userInfo.name } })
 
@@ -146,8 +158,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
               }
               console.log(info)
-
-
             }
 
             return interaction.reply(singleUser.get('days'));
@@ -159,45 +169,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
           
           submissionCount.get
         }
-
-        
-
-        // for(var i = 0; i < datesData.length; i++) {
-       
-        //   const day = await submissionCount.findAll({ attributes: ['day_of_week']});
-        //   if (day === datesData[i]) {
-            
-        //     day.increment('submissions');
-        //     console.log(day)
-            
-        //   } 
-        // return interaction.reply(day);
-          
-        // }
-
-
-              // for(var i=0; i < submissionCount.day_of_week.length; i++) {
-              //   const singleDay = await submissionCount.findOne({ where: { day_of_week: datesData[i] } })
-              //   if (singleDay === dateData[i]) {
-              //     singleDay.increment('submissions')
-              //     singleDay.destroy({where: { day_of_week: datesData[i]}})
-              //   } else { 
-              //     console.log('only create')
-              //   }
-
-              // }
-
-
-
-
-        // return interaction.reply(`Could not find tag: ${singleUser}`);
-        // if (info.get(daysOfWeek[i]) === true ) {
-        //   submissionCount.create({
-        //     day_of_week: info.get(daysOfWeek[i]),
-        //     submissions: 1
-        //   })
-        // }
-
         
       } catch (error) {
         if (error.name === "SequelizeUniqueConstraintError") {
@@ -206,11 +177,55 @@ client.on(Events.InteractionCreate, async (interaction) => {
   
         return interaction.reply("Something went wrong :(");
       }
-
-
     
   }
 });
+
+// Handles mnovie name modal submission and adds it to movies database
+
+client.on(Events.InteractionCreate, async (interaction) => {
+  
+  
+  if (interaction.customId === "moviePick") {
+    if (!interaction.isModalSubmit()) return;
+    const movieData = interaction.fields.getTextInputValue("movieInput")
+    const streamingData = interaction.fields.getTextInputValue("streamingService")
+    try {
+      const movieInfo = await movie.create({
+        name: movieData,
+        streamingPlatform: streamingData
+      })
+      
+
+
+
+
+
+    } catch (error) {
+      if (error.name === "SequelizeUniqueConstraintError") {
+        return interaction.reply("Something already exists.");
+      }
+
+      return interaction.reply("Something went wrong :(");
+''
+    }
+    return interaction.reply({ content: 'Your pick has been logged, thank you!', ephemeral: true})
+
+  }
+})
+
+client.on(Events.InteractionCreate, async (modalSubmit) => {
+  if (!modalSubmit.isModalSubmit()) return;
+
+  
+  if (commandName === "whatmovie") {
+    // if (!interaction.isChatInputCommand()) return;
+    const modalData = await movie.findAll({ attributes: ['name']});
+    const formattedData = modalData.map( movie => movie.name).join(', ') || "Person (probably luis) hasn't dropped movie choice yet"
+    await modalSubmit.reply({ formattedData }) 
+  }
+  }
+)
 
 
 
