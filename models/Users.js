@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: false
         },
         availability: {
-            type: DataTypes.ARRAY
+            type: DataTypes.ARRAY(DataTypes.STRING)
         }
     })
 }

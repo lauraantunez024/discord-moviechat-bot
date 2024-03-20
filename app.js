@@ -18,38 +18,10 @@ require("dotenv").config();
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-const sequelize = new Sequelize('availability', 'laura', 'password', {
-  host: 'localhost',
-  dialect: 'postgres'
-});
-
-const userAvailability = sequelize.define("availability", {
-  name: {
-    type: Sequelize.STRING,
-    unique: false,
-  },
-  days: Sequelize.ARRAY(Sequelize.STRING),
-});
-
-const submissionCount = sequelize.define("submission_count", {
-    day_of_week: {
-      type: Sequelize.STRING,
-      // defaultValue: 'Wednesday',
-      unique: false
-    },
-    submissions: {
-        type: Sequelize.INTEGER,
-        defaultValue: 0
-    }
-});
-
-const movie = sequelize.define("movie_info", {
-  name: {
-    type: Sequelize.TEXT,
-    unique: true
-  },
-  streamingPlatform:  Sequelize.TEXT
-})
+// const sequelize = new Sequelize('database', 'laura', 'password', {
+//   host: 'localhost',
+//   dialect: 'postgres'
+// });
 
 
 
