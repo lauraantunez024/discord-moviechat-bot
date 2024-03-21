@@ -5,7 +5,7 @@ const sequelize = new Sequelize('movienightdb', 'laura', 'password', {
 });
 
 const Movie = require('./models/Movies.js')(sequelize, Sequelize.DataTypes);
-require('./models/Users.js')(sequelize, Sequelize.DataTypes)
+const User = require('./models/Users.js')(sequelize, Sequelize.DataTypes)
 require('./models/MovieNightDetails.js')(sequelize, Sequelize.DataTypes)
 
 const force = process.argv.includes('--force') || process.argv.includes('-f')
@@ -14,7 +14,11 @@ sequelize.sync({ force }).then(async () => {
     const picks = [
         Movie.upsert({ name: 'Linda Linda Lindas', streaming_service: 'Youtube'}),
         Movie.upsert({ name: 'Bicycle Thieves', streaming_service: 'Max'}),
-        Movie.upsert({ name: 'The Harder They Fall', streaming_service: 'Netflix'})
+        Movie.upsert({ name: 'The Harder They Fall', streaming_service: 'Netflix'}),
+        User.upsert({ user_id: 'Laura', is_chosen: true, availability: ['Monday', 'Thursday', 'Friday']}),
+        User.upsert({ user_id: 'Erin', is_chosen: true, availability: ['Monday', 'Thursday', 'Friday']}),
+        User.upsert({ user_id: 'Luis', is_chosen: true, availability: ['Monday', 'Thursday', 'Friday']}),
+        User.upsert({ user_id: 'Angelica', is_chosen: true, availability: ['Monday', 'Thursday', 'Friday']})
     ];
 
     await Promise.all(picks);

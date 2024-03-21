@@ -2,9 +2,11 @@ const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('ping')
-		.setDescription('Replies with Pong!'),
+		.setName('chosen-one')
+		.setDescription('claim your turn on the throne'),
+
 	async execute(interaction) {
-		await interaction.showModal(modal);
+	await interaction.reply({ content: `Thank you chosen one. We eagerly await your movie pick.`, ephemeral: true })
+
 	},
 };

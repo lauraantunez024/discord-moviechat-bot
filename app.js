@@ -1,9 +1,10 @@
 // Require the necessary discord.js classes
 const fs = require("node:fs");
 const path = require("node:path");
-const Sequelize = require("sequelize");
+const { Op, Sequelize } = require('sequelize');
+const { Client, codeBlock, Collection, Events, GatewayIntentBits } = require('discord.js');
+const { Users, Movies } = require('./dbObjects.js');
 const pg = require('pg');
-const { Client, Collection, GatewayIntentBits, Events } = require("discord.js");
 const daysOfWeek = [
   "Monday",
   "Tuesday",
@@ -17,14 +18,15 @@ const daysOfWeek = [
 require("dotenv").config();
 
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-// const sequelize = new Sequelize('database', 'laura', 'password', {
-//   host: 'localhost',
-//   dialect: 'postgres'
-// });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
+const sequelize = new Sequelize('database', 'laura', 'password', {
+  host: 'localhost',
+  dialect: 'postgres'
+});
 
+const moviedb = new Collection();
 
-
+// TO DO: add helper function that determines best day based on responses and adds it to movie night details db
 client.commands = new Collection();
 
 const foldersPath = path.join(__dirname, "commands");
@@ -50,9 +52,9 @@ for (const folder of commandFolders) {
 }
 
 client.once(Events.ClientReady, (readyClient) => {
-  userAvailability.sync();
+  // userAvailability.sync();
   // submissionCount.sync();
-  movie.sync();
+  // movie.sync();
   console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
 
@@ -67,8 +69,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     console.error(`No command matching ${interaction.commandName} was found.`);
     return;
   }
-
- 
 
   try {
     await command.execute(interaction);
@@ -89,6 +89,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 
+// async function findAvailable(user, days) {
+//   const user = interaction.user.id
+
+//   if (user) {
+
+//   }
+// }
+
+
 // Handles modal submission and adds it to sequelize database  
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -99,107 +108,124 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const nameData = interaction.fields.getTextInputValue("nameInput");
     const dateData = interaction.fields.getTextInputValue("dateInput");
     const filteredDates = dateData.trim().replace(' ', '');
+    const dateCollection = new Collection();
     const datesData = filteredDates.split(',');
-    const info = new Map();
-    for(var i=0; i < daysOfWeek.length; i++) {
-      info.set(daysOfWeek[i])
+    for(var i=0; i < datesData.length; i++) {
+      dateCollection.set('day', datesData[i])
     }
+
+  
+    for(var i=0; i < daysOfWeek.length; i++) {
+     moviedb.set(daysOfWeek[i], 0) 
+    }
+
+   const entryFilter = moviedb.filter(dateCollection.values() === moviedb.keys())
+   
+   {
+    return Users.create({ user_id: nameData, availability: entryFilter})
+    
+   }
     
 
-    try { 
+    // try { 
 
-      const userInfo = await userAvailability.create({
-        name: nameData,
-        days: datesData,
-      });
-      // for(var i=0; i < datesData.length; i++) {
-      //   const dateInfo = submissionCount.create({
-      //     day_of_week: datesData[i]
-      //   })
-      // }
+    //   const userInfo = await userAvailability.create({
+    //     name: nameData,
+    //     days: datesData,
+    //   });
+    //   // for(var i=0; i < datesData.length; i++) {
+    //   //   const dateInfo = submissionCount.create({
+    //   //     day_of_week: datesData[i]
+    //   //   })
+    //   // }
 
-        const singleUser = await userAvailability.findOne({ where: { name: userInfo.name } })
+    //     const singleUser = await userAvailability.findOne({ where: { name: userInfo.name } })
 
-        if (singleUser) {
-            for(var i=0; i < datesData.length; i++) {
-              if (singleUser.get('days').includes(datesData[i])) {
-                info.set(daysOfWeek[i], true)
+    //     if (singleUser) {
+    //         for(var i=0; i < datesData.length; i++) {
+    //           if (singleUser.get('days').includes(datesData[i])) {
+    //             info.set(daysOfWeek[i], true)
 
-              } else {
-                info.set(daysOfWeek[i], false)
+    //           } else {
+    //             info.set(daysOfWeek[i], false)
 
-              }
-              console.log(info)
-            }
+    //           }
+    //           console.log(info)
+    //         }
 
-            return interaction.reply(singleUser.get('days'));
-        }
+    //         return interaction.reply(singleUser.get('days'));
+    //     }
 
-        const singleDay = await submissionCount.findOne({ where: { day_of_week: dateInfo.day_of_week}})
+    //     const singleDay = await submissionCount.findOne({ where: { day_of_week: dateInfo.day_of_week}})
 
-        if (!singleDay) {
+    //     if (!singleDay) {
           
-          submissionCount.get
-        }
+    //       submissionCount.get
+    //     }
         
-      } catch (error) {
-        if (error.name === "SequelizeUniqueConstraintError") {
-          return interaction.reply("Something already exists.");
-        }
+    //   } catch (error) {
+    //     if (error.name === "SequelizeUniqueConstraintError") {
+    //       return interaction.reply("Something already exists.");
+    //     }
   
-        return interaction.reply("Something went wrong :(");
-      }
+    //     return interaction.reply("Something went wrong :(");
+    //   }
     
   }
 });
 
 // Handles mnovie name modal submission and adds it to movies database
 
-client.on(Events.InteractionCreate, async (interaction) => {
+// client.on(Events.InteractionCreate, async (interaction) => {
   
   
-  if (interaction.customId === "moviePick") {
-    if (!interaction.isModalSubmit()) return;
-    const movieData = interaction.fields.getTextInputValue("movieInput")
-    const streamingData = interaction.fields.getTextInputValue("streamingService")
-    try {
-      const movieInfo = await movie.create({
-        name: movieData,
-        streamingPlatform: streamingData
-      })
+//   if (interaction.customId === "moviePick") {
+//     if (!interaction.isModalSubmit()) return;
+//     const movieData = interaction.fields.getTextInputValue("movieInput")
+//     const streamingData = interaction.fields.getTextInputValue("streamingService")
+//     try {
+//       const movieInfo = await movie.create({
+//         name: movieData,
+//         streamingPlatform: streamingData
+//       })
       
 
 
 
 
 
-    } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        return interaction.reply("Something already exists.");
-      }
+//     } catch (error) {
+//       if (error.name === "SequelizeUniqueConstraintError") {
+//         return interaction.reply("Something already exists.");
+//       }
 
-      return interaction.reply("Something went wrong :(");
-''
-    }
-    return interaction.reply({ content: 'Your pick has been logged, thank you!', ephemeral: true})
+//       return interaction.reply("Something went wrong :(");
+// ''
+//     }
+//     return interaction.reply({ content: 'Your pick has been logged, thank you!', ephemeral: true})
 
-  }
-})
+//   }
+// })
 
-client.on(Events.InteractionCreate, async (modalSubmit) => {
-  if (!modalSubmit.isModalSubmit()) return;
+// client.on(Events.InteractionCreate, async (modalSubmit) => {
+//   if (!modalSubmit.isModalSubmit()) return;
 
   
-  if (commandName === "whatmovie") {
-    // if (!interaction.isChatInputCommand()) return;
-    const modalData = await movie.findAll({ attributes: ['name']});
-    const formattedData = modalData.map( movie => movie.name).join(', ') || "Person (probably luis) hasn't dropped movie choice yet"
-    await modalSubmit.reply({ formattedData }) 
-  }
-  }
-)
+//   if (commandName === "whatmovie") {
+//     // if (!interaction.isChatInputCommand()) return;
+//     const modalData = await movie.findAll({ attributes: ['name']});
+//     const formattedData = modalData.map( movie => movie.name).join(', ') || "Person (probably luis) hasn't dropped movie choice yet"
+//     await modalSubmit.reply({ formattedData }) 
+//   }
+//   }
+// )
 
 
+// client.once(Events.ClientReady, async readyClient => {
+// 	const storedDays = await Users.findAll();
+// 	storedMovies.forEach(b => currency.set(b.user_id, b));
 
+// 	console.log(`Logged in as ${readyClient.user.tag}!`);
+// });
 // Log in to Discord with your client's token
 client.login(process.env.TOKEN);
