@@ -15,5 +15,8 @@
     "postgresql": "^0.0.1",
     "sequelize": "^6.37.1",
     "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "node-cron": "^3.0.3"
   }
 }

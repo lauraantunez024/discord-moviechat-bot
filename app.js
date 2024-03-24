@@ -5,6 +5,7 @@ const { Op, Sequelize } = require('sequelize');
 const { Client, codeBlock, Collection, Events, GatewayIntentBits } = require('discord.js');
 const { Users, Movies } = require('./dbObjects.js');
 const pg = require('pg');
+const cron = require('node-cron')
 const daysOfWeek = [
   "Monday",
   "Tuesday",
@@ -27,6 +28,52 @@ const sequelize = new Sequelize('database', 'laura', 'password', {
 const moviedb = new Collection();
 
 // TO DO: add helper function that determines best day based on responses and adds it to movie night details db
+// Create a cron job that fires day after 'best available day'
+
+// const chosen = new Collection();
+
+async function updateChosenUser () {
+  try {
+        const users = await Users.findAll({ });
+        
+        const chosenUser = Users.findOne({ where: { is_chosen: true } }) || 'No one is chosen.';
+
+        const chosenIndex = chosenUser ? users.indexOf(chosenUser) : -1;
+
+        const nextIndex = (chosenIndex + 1) % users.length;
+
+        for (let i=0; i < users.length; i++) {
+          if (i === nextIndex) {
+            users[i].is_chosen = true;
+         
+          } else {
+            users[i].is_chosen = false;
+          }
+          await users[i].save()
+        }
+        return users[nextIndex]
+      } catch (error) {
+        console.error('Error updating chosen user:', error);
+      }
+
+}
+
+cron.schedule('* * * * * *', async () => {
+  console.log('Running cron to update user....')
+  try {
+    const chosenUser = await updateChosenUser();
+    console.log('Chosen User:', chosenUser.user_id)
+
+  } catch(error) {
+    console.error('Error updating chosen user:', error)
+  }
+})
+
+// updateChosenUser().then(chosenUser => {
+//   console.log('Chosen User:', chosenUser.user_id)
+// }).catch(error => {
+//   console.error('Error:', error)
+// })
 client.commands = new Collection();
 
 const foldersPath = path.join(__dirname, "commands");
@@ -72,7 +119,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   try {
     await command.execute(interaction);
-  } catch (error) {
+  } catch (error) {qe
     console.error(error);
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
@@ -120,6 +167,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
    const entryFilter = moviedb.filter(dateCollection.values() === moviedb.keys())
+    moviedb.set
    
    {
     return Users.create({ user_id: nameData, availability: entryFilter})

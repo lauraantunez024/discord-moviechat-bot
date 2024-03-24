@@ -8,7 +8,7 @@ const Users = require('./models/Users.js')(sequelize, Sequelize.DataTypes);
 const Movies = require('./models/Movies')(sequelize, Sequelize.DataTypes);
 const MovieNightDetails = require('./models/MovieNightDetails.js')(sequelize, Sequelize.DataTypes)
 
-MovieNightDetails.belongsTo(Movies, { foreignKey: 'movie_id', as: 'movie' });
+MovieNightDetails.belongsTo(Movies, { foreignKey: 'movie_id', as: 'movie'});
 MovieNightDetails.belongsTo(Users)
 
 Reflect.defineProperty(Users.prototype, 'addMovie', {
