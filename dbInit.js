@@ -15,7 +15,7 @@ sequelize.sync({ force }).then(async () => {
         Movie.upsert({ name: 'Linda Linda Lindas', streaming_service: 'Youtube'}),
         Movie.upsert({ name: 'Bicycle Thieves', streaming_service: 'Max'}),
         Movie.upsert({ name: 'The Harder They Fall', streaming_service: 'Netflix'}),
-        User.upsert({ user_id: 'Laura', is_chosen: false, availability: ['Monday', 'Wednesday', 'Friday']}),
+        User.upsert({ user_id: 'Laura', is_chosen: true, availability: ['Monday', 'Wednesday', 'Friday']}),
         User.upsert({ user_id: 'Erin', is_chosen: false, availability: ['Monday', 'Tuesday', 'Wednesday']}),
         User.upsert({ user_id: 'Luis', is_chosen: false, availability: ['Tuesday', 'Thursday', 'Friday']}),
         User.upsert({ user_id: 'Angelica', is_chosen: false, availability: ['Sunday', 'Saturday', 'Friday']})

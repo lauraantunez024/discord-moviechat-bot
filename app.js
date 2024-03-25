@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { Op, Sequelize } = require('sequelize');
 const { Client, codeBlock, Collection, Events, GatewayIntentBits } = require('discord.js');
-const { Users, Movies } = require('./dbObjects.js');
+const { Users, Movies, MovieNightDetails } = require('./dbObjects.js');
 const pg = require('pg');
 const cron = require('node-cron')
 const daysOfWeek = [
@@ -58,7 +58,7 @@ async function updateChosenUser () {
 
 }
 
-cron.schedule('* * * * * *', async () => {
+cron.schedule('* 1 * * *', async () => {
   console.log('Running cron to update user....')
   try {
     const chosenUser = await updateChosenUser();
@@ -155,71 +155,90 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const nameData = interaction.fields.getTextInputValue("nameInput");
     const dateData = interaction.fields.getTextInputValue("dateInput");
     const filteredDates = dateData.trim().replace(' ', '');
-    const dateCollection = new Collection();
+    // const dateCollection = new Collection();
     const datesData = filteredDates.split(',');
-    for(var i=0; i < datesData.length; i++) {
-      dateCollection.set('day', datesData[i])
-    }
+    let someMovie = 'Lord of the Rings: Return of the King'
+ 
 
+    try { 
+
+     await userAvailability.create({
+        name: nameData,
+        days: datesData,
+      });
+
+
+      const dayCounts = {};
+      
+      datesData.forEach(day => {
+        dayCounts[day] = (dayCounts[day] || 0) +1;
+      });
+
+      let mostMentionedDay = '';
+      let maxCount = 0;
+
+      for (const day in dayCounts) {
+        if (dayCounts[day] > maxCount){
+          mostMentionedDay = day;
+          maxCount = dayCounts[day]
+        }
+      }
+      const movieNames = new Collection();
+
+      const movies = Movies.findAll({ attributes: ['name']})
+
+      const movieList = movies.map(m => m.name)
+      movieNames.set(movieList)
+      const chosenOne = Users.findOne({ where: { is_chosen: true } }) || 'No one is chosen.';
+
+
+      const movieDeets = await MovieNightDetails.create({
+        user_id: chosenOne.user_id,
+        movie_name: movieNames.last(),
+        best_day: mostMentionedDay
+})
+
+      // for(var i=0; i < datesData.length; i++) {
+      //   const dateInfo = submissionCount.create({
+      //     day_of_week: datesData[i]
+      //   })
+      // }
+
+      //   const singleUser = await userAvailability.findOne({ where: { name: userInfo.name } })
+
+      //   if (singleUser) {
+      //       for(var i=0; i < datesData.length; i++) {
+      //         if (singleUser.get('days').includes(datesData[i])) {
+      //           info.set(daysOfWeek[i], true)
+
+      //         } else {
+      //           info.set(daysOfWeek[i], false)
+
+      //         }
+      //         console.log(info)
+      //       }
+
+      //       return interaction.reply(singleUser.get('days'));
+      //   }
+
+      //   const singleDay = await submissionCount.findOne({ where: { day_of_week: dateInfo.day_of_week}})
+
+      //   if (!singleDay) {
+          
+      //     submissionCount.get
+      //   }
+      console.log(movieDeets.user_id, movieDeets.movie_name, movieDeets.best_day)
+        
+      } catch (error) {
+        if (error.name === "SequelizeUniqueConstraintError") {
+          return interaction.reply("Something already exists.");
+        }
   
-    for(var i=0; i < daysOfWeek.length; i++) {
-     moviedb.set(daysOfWeek[i], 0) 
-    }
-
-   const entryFilter = moviedb.filter(dateCollection.values() === moviedb.keys())
-    moviedb.set
-   
-   {
-    return Users.create({ user_id: nameData, availability: entryFilter})
+        return interaction.reply("Something went wrong :(");
+       }
+       return interaction.reply({ content: 'Your pick has been logged, thank you!', ephemeral: true})
     
    }
-    
-
-    // try { 
-
-    //   const userInfo = await userAvailability.create({
-    //     name: nameData,
-    //     days: datesData,
-    //   });
-    //   // for(var i=0; i < datesData.length; i++) {
-    //   //   const dateInfo = submissionCount.create({
-    //   //     day_of_week: datesData[i]
-    //   //   })
-    //   // }
-
-    //     const singleUser = await userAvailability.findOne({ where: { name: userInfo.name } })
-
-    //     if (singleUser) {
-    //         for(var i=0; i < datesData.length; i++) {
-    //           if (singleUser.get('days').includes(datesData[i])) {
-    //             info.set(daysOfWeek[i], true)
-
-    //           } else {
-    //             info.set(daysOfWeek[i], false)
-
-    //           }
-    //           console.log(info)
-    //         }
-
-    //         return interaction.reply(singleUser.get('days'));
-    //     }
-
-    //     const singleDay = await submissionCount.findOne({ where: { day_of_week: dateInfo.day_of_week}})
-
-    //     if (!singleDay) {
-          
-    //       submissionCount.get
-    //     }
-        
-    //   } catch (error) {
-    //     if (error.name === "SequelizeUniqueConstraintError") {
-    //       return interaction.reply("Something already exists.");
-    //     }
-  
-    //     return interaction.reply("Something went wrong :(");
-    //   }
-    
-  }
 });
 
 // Handles mnovie name modal submission and adds it to movies database
